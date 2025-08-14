@@ -34,7 +34,7 @@ const packages = [
   },
 ];
 
-// SSR route - renders full HTML using EJS
+// Normal SSR route (EJS rendering)
 app.get('/package/:slug', (req, res) => {
   const pkg = packages.find(p => p.slug === req.params.slug);
   if (!pkg) return res.status(404).send('Package not found');
@@ -45,11 +45,18 @@ app.get('/', (req, res) => {
   res.send('Welcome to Backend');
 });
 
-// JSON APIs
+// Combined CSR + SSR API
 app.get('/api/package/:slug', (req, res) => {
   const pkg = packages.find(p => p.slug === req.params.slug);
-  if (pkg) res.json(pkg);
-  else res.status(404).json({ error: 'Package not found' });
+  if (!pkg) return res.status(404).json({ error: 'Package not found' });
+
+  // If ?render=html → return SSR HTML
+  if (req.query.render === 'html') {
+    return res.render('package', { pkg });
+  }
+
+  // Default → JSON (CSR)
+  res.json(pkg);
 });
 
 app.get('/api/random-package', (req, res) => {
